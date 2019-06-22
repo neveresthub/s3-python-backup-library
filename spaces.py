@@ -9,6 +9,9 @@ import threading
 from colors import color
 from boto3 import session
 
+from cli_tools import parser
+from utils import ProgressPercentage
+from config import (ACCESS_ID,SECRET_KEY,SERVICE_NAME,REGION_NAME,ENDPOINT_URL,BUCKET_NAME)
 
 cwd_dir = os.getcwd()
 logs_dir = os.path.join(cwd_dir, '.logs')
@@ -21,34 +24,6 @@ logging.basicConfig(filename=os.path.join(logs_dir,'logs.log'),
 if not os.path.exists(failed_dir):
 	os.makedirs(failed_dir)
 
-ACCESS_ID = 'UUPDEEZUH4DSX2ZTWKBR'
-SECRET_KEY = 'Vt/BRMzJAeKXZ+SAy/Udcuj3c5JRo7ZRtvYg2XW5KHA'
-
-SERVICE_NAME = 's3'
-REGION_NAME = 'sfo2'
-ENDPOINT_URL = 'https://example-api.sfo2.digitaloceanspaces.com'
-BUCKET_NAME = "backup"
-
-class ProgressPercentage(object):
-
-	def __init__(self, filename):
-		self._filename = filename
-		self._size = float(os.path.getsize(filename))
-		self._seen_so_far = 0
-		self._lock = threading.Lock()
-
-	def __call__(self, bytes_amount):
-		# To simplify, assume this is hooked up to a single filename
-		with self._lock:
-			self._seen_so_far += bytes_amount
-			percentage = (self._seen_so_far / self._size) * 100
-			sys.stdout.write(
-				"\r%s / %s  (%.2f%%)\n" % (
-					self._seen_so_far, self._size,
-					percentage
-				)
-			)
-			sys.stdout.flush()
 
 def log_error(error_file):
 	log_file = os.path.join(failed_dir,"%s.txt"%time.strftime("%Y%m%d"))
@@ -72,19 +47,24 @@ def set_client():
 	)
 	return client
 
-def upload_dir(dirpath):
+def upload_dir(dirpath,bucket_name=None):
 	client = set_client()
 	if not os.path.isdir(dirpath):
 		raise Exception("Not a Valid Directory :%s" % (dirpath))
+	bucket = BUCKET_NAME
+	if bucket_name:
+		bucket = bucket_name
+
 	file_count = 0
 	error_count = 0
+
 	print(color("Initializing ...\n",fg="yellow"))
 	for (root, dirs, filenames) in os.walk(top=dirpath, topdown=True):
 		for filename in filenames:
 			filepath = os.path.join(root, filename)
 			try:
 				print(color("%s \nuploading...\n"%filepath,fg='blue'))
-				client.upload_file(filepath, BUCKET_NAME ,os.path.abspath(filepath) ,Callback=ProgressPercentage(filepath))
+				client.upload_file(filepath, bucket ,os.path.abspath(filepath) ,Callback=ProgressPercentage(filepath))
 				print(color("Success\n",fg="lime"))
 				file_count += 1
 			except Exception as e:
@@ -100,4 +80,7 @@ def upload_dir(dirpath):
 		print(color("Please Check the log file located at .logs in the current working directory",fg='#ff1a1a'))
 
 if __name__ == '__main__':
-	upload_dir("/home/coder/Documents/")
+	args = parser.parse_args()
+	root_dir = args.dir
+	bucket_name = args.bucket
+	upload_dir(root_dir,bucket_name)
