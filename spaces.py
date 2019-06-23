@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 
 import os
-import sys
 import json
 import time
 import logging
-import threading
 from colors import color
 from boto3 import session
 
