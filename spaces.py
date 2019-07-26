@@ -66,6 +66,7 @@ def upload_dir(dirpath, bucket_name=None):
             upload_path = os.path.relpath(filepath, start=base).lstrip("../")
             try:
                 print(color("%s \nuploading...\n" % filepath, fg='blue'))
+                # print("%s" % upload_path)
                 client.upload_file(
                     filepath,
                     bucket,
@@ -91,7 +92,7 @@ def upload_dir(dirpath, bucket_name=None):
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    root_dir = args.dir.rstrip("/")
+    root_dir = args.dir
     bucket_name = args.bucket
     upload_dir(root_dir, bucket_name)
 
