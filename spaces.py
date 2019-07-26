@@ -62,7 +62,8 @@ def upload_dir(dirpath, bucket_name=None):
     for (root, dirs, filenames) in os.walk(top=dirpath, topdown=True):
         for filename in filenames:
             filepath = os.path.join(root, filename)
-            upload_path = os.path.relpath(filepath, start="personal_docs").lstrip("../")
+            base = os.path.basename(filepath.rstrip("/"))
+            upload_path = os.path.relpath(filepath, start=base).lstrip("../")
             try:
                 print(color("%s \nuploading...\n" % filepath, fg='blue'))
                 client.upload_file(
