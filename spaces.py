@@ -63,7 +63,10 @@ def upload_dir(dirpath, bucket_name=None):
         for filename in filenames:
             filepath = os.path.join(root, filename)
             base = os.path.basename(filepath.rstrip("/"))
-            upload_path = os.path.relpath(filepath, start=base).lstrip("../")
+
+            start,folder=os.path.split(dirpath)
+            upload_path = os.path.relpath(filepath, start=start).lstrip("../")
+
             try:
                 print(color("%s \nuploading...\n" % filepath, fg='blue'))
                 # print("%s" % upload_path)
